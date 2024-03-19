@@ -5,6 +5,7 @@ import (
 	"log"
 )
 
+// SelectTotalDeReceitas retrieves the total sum of revenue from the database.
 func SelectTotalDeReceitas(db *sql.DB) int {
 	rows, err := db.Query("select sum(coalesce(valor, 0)) from operacoes_financeiras where debito = false")
 	if err != nil {
@@ -21,6 +22,7 @@ func SelectTotalDeReceitas(db *sql.DB) int {
 	return total
 }
 
+// SelectTotalDeDespesas retrieves the total sum of expenses from the database.
 func SelectTotalDeDespesas(db *sql.DB) int {
 	rows, err := db.Query("select sum(coalesce(valor, 0)) from operacoes_financeiras where debito = true")
 	if err != nil {
@@ -35,9 +37,9 @@ func SelectTotalDeDespesas(db *sql.DB) int {
 		}
 	}
 	return total
-
 }
 
+// CheckCartaoExists checks if a card with the given name exists in the database.
 func CheckCartaoExists(db *sql.DB, name string) bool {
 	rows, err := db.Query("select * from cartoes where name = ?", name)
 	if err != nil {
@@ -47,6 +49,7 @@ func CheckCartaoExists(db *sql.DB, name string) bool {
 	return rows.Next()
 }
 
+// CheckGastoFixoExists checks if an expense with the given description and value exists in the database.
 func CheckGastoFixoExists(db *sql.DB, gastoFixo OperacaoFinanceira) bool {
 	rows, err := db.Query("select * from operacoes_financeiras where descricao = ? and valor = ?", gastoFixo.Descricao, gastoFixo.Valor)
 	if err != nil {
@@ -56,8 +59,8 @@ func CheckGastoFixoExists(db *sql.DB, gastoFixo OperacaoFinanceira) bool {
 	return rows.Next()
 }
 
+// CreateSqliteDatabase creates a new SQLite database and initializes the necessary tables.
 func CreateSqliteDatabase() *sql.DB {
-
 	db, err := sql.Open("sqlite3", "./test.db")
 	if err != nil {
 		log.Fatal(err)
@@ -82,6 +85,7 @@ func CreateSqliteDatabase() *sql.DB {
 	return db
 }
 
+// DoStatement executes the given SQL statement on the database.
 func DoStatement(db *sql.DB, sqlStmt string) {
 	_, err := db.Exec(sqlStmt)
 	if err != nil {
@@ -89,6 +93,7 @@ func DoStatement(db *sql.DB, sqlStmt string) {
 	}
 }
 
+// SeedDatabase populates the database with initial data.
 func SeedDatabase(db *sql.DB) {
 	CreateOrUpdateByCartao(db, Cartao{Name: "vinicius", PrimeiroDiaDeCompras: 13, diaDoVencimento: 21})
 	CreateOrUpdateByCartao(db, Cartao{Name: "franciele", PrimeiroDiaDeCompras: 1, diaDoVencimento: 6})
@@ -109,6 +114,7 @@ func SeedDatabase(db *sql.DB) {
 	CreateOrUpdateByOperacaoFinanceira(db, OperacaoFinanceira{Descricao: "adiantamento vinicius", Valor: 3068, Fixo: true, Debito: false})
 }
 
+// CreateOrUpdateByCartao creates or updates a card in the database based on its name.
 func CreateOrUpdateByCartao(db *sql.DB, cartao Cartao) {
 	if CheckCartaoExists(db, cartao.Name) {
 		_, err := db.Exec("update cartoes set primeiroDiaDeCompras = ?, diaDoVencimento = ? where name = ?", cartao.PrimeiroDiaDeCompras, cartao.diaDoVencimento, cartao.Name)
@@ -123,6 +129,7 @@ func CreateOrUpdateByCartao(db *sql.DB, cartao Cartao) {
 	}
 }
 
+// CreateOrUpdateByOperacaoFinanceira creates or updates an expense in the database based on its description and value.
 func CreateOrUpdateByOperacaoFinanceira(db *sql.DB, gastoFixo OperacaoFinanceira) {
 	if CheckGastoFixoExists(db, gastoFixo) {
 		_, err := db.Exec("update operacoes_financeiras set valor = ?, fixo = ?, debito = ? where descricao = ?", gastoFixo.Valor, gastoFixo.Fixo, gastoFixo.Debito, gastoFixo.Descricao)
@@ -134,5 +141,29 @@ func CreateOrUpdateByOperacaoFinanceira(db *sql.DB, gastoFixo OperacaoFinanceira
 		if err != nil {
 			log.Fatal(err)
 		}
+	}
+}
+
+// InsertCartao inserts a new card into the database.
+func InsertCartao(db *sql.DB, cartao Cartao) {
+	_, err := db.Exec("insert into cartoes(name, primeiroDiaDeCompras, diaDoVencimento) values(?, ?, ?)", cartao.Name, cartao.PrimeiroDiaDeCompras, cartao.diaDoVencimento)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+// InsertOperacaoFinanceira inserts a new expense into the database.
+func InsertOperacaoFinanceira(db *sql.DB, gastoFixo OperacaoFinanceira) {
+	_, err := db.Exec("insert into operacoes_financeiras(valor, descricao, fixo, debito) values(?,?,?,?)", gastoFixo.Valor, gastoFixo.Descricao, gastoFixo.Fixo, gastoFixo.Debito)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+// InsertSaldo inserts a new balance into the database.
+func InsertSaldo(db *sql.DB, saldo Saldo) {
+	_, err := db.Exec("insert into saldo(data_hora, valor) values(?,?)", saldo.DataHora, saldo.Valor)
+	if err != nil {
+		log.Fatal(err)
 	}
 }
