@@ -45,6 +45,13 @@ func main() {
 		})
 	})
 
+	r.GET("/cartoes", func(c *gin.Context) {
+		cartoes := database.SelectCartoes(db)
+		c.JSON(http.StatusOK, gin.H{
+			"cartoes": cartoes,
+		})
+	})
+
 	r.POST("/cartao", func(c *gin.Context) {
 		var cartao database.Cartao
 		c.BindJSON(&cartao)

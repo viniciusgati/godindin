@@ -167,3 +167,21 @@ func InsertSaldo(db *sql.DB, saldo Saldo) {
 		log.Fatal(err)
 	}
 }
+
+func SelectCartoes(db *sql.DB) []Cartao {
+	rows, err := db.Query("select * from cartoes")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer rows.Close()
+	var cartoes []Cartao
+	for rows.Next() {
+		var cartao Cartao
+		err := rows.Scan(&cartao.Id, &cartao.Name, &cartao.PrimeiroDiaDeCompras, &cartao.diaDoVencimento)
+		if err != nil {
+			log.Fatal(err)
+		}
+		cartoes = append(cartoes, cartao)
+	}
+	return cartoes
+}
